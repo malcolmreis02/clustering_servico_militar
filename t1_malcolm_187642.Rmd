@@ -1,0 +1,216 @@
+---
+title: "Agrupando Jovens para a Prática Segura de Esportes Coletivos na Escola Preparatória de Cadetes do Exército (EsPCex)"
+author: "Trabalho 1 - ME921"
+date: "Malcolm dos Reis - 187642"
+output: pdf_document
+header-includes:
+ \usepackage{float}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, include = TRUE, fig.align = "center", fig.pos = "H")
+```
+
+```{r bibliotecas, warning=F, message=F}
+library(readr) # ler o arquivo
+library(dplyr) # manipular o banco
+library(ggplot2) # fazer graficos
+library(magrittr) # usar os pipes
+library(tidyr) # usar o drop_na
+library(ggdendro) # dendograma com ggplot
+```
+
+# Introdução
+
+\   Todo jovem brasileiro do sexo masculino, no ano em que faz 18 anos, deve se apresentar para a Junta de Serviço Militar mais próxima da sua residência para realizar o alistamento para o Serviço Militar obrigatório, como previsto por Lei na Constituição da República Federativa do Brasil de 1988. Os jovens que não se apresentarem deixam de possuir alguns direitos civis, como obter passaporte, se matricular em uma universidade pública e trabalhar para alguma instituição pública. Portanto, todos os cidadãos que hoje, usufruem de todos os direitos civis no Brasil, em algum momento já realizaram o alistamento obrigatório.
+
+\   Hoje, o Governo Federal possui um Programa de Dados Abertos que vêm colocando a disposição do público dados relevantes de várias instituições públicas, dentre elas, o Exército Brasileiro. 
+
+\   Com isso, foi possível obter dados sobre as caracteristicas dos jovens que realizaram o alistamento obrigatório em todo o Brasil no ano de 2022. Dentre essas informações temos o estado e a cidade de nascimento, peso, altura, tamanho da circunferencia da cabea e o tamanho do calçado desses jovens, se eles foram dispensados do serviço militar obrigarório ou não, entre outras informações sobre o cidadão que se apresentou. Esse banco de dados contém 1020927 observações e pode ser baixado através [desse site](https://dadosabertos.eb.mil.br/arquivos/sermil/sermil2022.csv).
+
+\   No Brasil, os jovens que residem em cidades que não possuem uma Junta de Serviço Militar com estrutura suficiente para colocar esse programa em prática, geralmente, são logo dispensados desse serviço militar obrigatório. Entretanto, na cidade de Campinas, cidade do interior de São Paulo, tem uma grande área dedicada a atividades militares como batalhões de logística e de infantaria, por exemplo. Dentro dessa área tem a EsPCex (Escola Preparatória de Cadetes do Exército) que, além de realizar o curso de cadetes para os jovens concursados, também faz uma espécie de programa militar com aqueles jovens que irão fazer o serviço militar obrigatório nessa cidade.
+
+\   Nesse sentido, na EsPCex tem uma extensa área de prática esportiva a qual nela está inclusa uma quadra poliesportiva, sendo possível a prática de vários esportes coletivos como futsal, handbol, basquete e vôlei.
+
+\   Nesse sentido, sabendo que todos os jovens participantes do programa do serviço militar obrigatório podem, em determinados horários, podem fazer o uso da quadra poliesportiva, seria muito bom separar esses jovens por estrutura corporal para que os times envolvidos na prática naquele momento tenham um tamanho alinhado para evitar que, por exemplo, pessoas muito altas e com peso muito acima joguem um jogo de muito atrito físico, como handebol e futebol, com uma pessoa de altura bem menor com um peso muito inferior.
+
+\   Portanto, vamos fazer um agrupamento desses jovens para que eles possam praticar os esportes coletivos nas quadras poliesportivas da EsPCex com segurança.
+
+\   Como dito anteriormente, os dados podem ser baixados através [desse site](https://dadosabertos.eb.mil.br/arquivos/sermil/sermil2022.csv), mas para realizar o serviço obrigatório na EsPCex o jovem tem que residir na cidade de Campinas, então vamos utilizar apenas os dados de quem reside nesta cidade.
+
+\   O método adotado para ler esse banco de forma mais otimizada foi ler o arquivo (.csv) em *chunks*, que envolve dividir a leitura dos dados em partes menores e já fazer as manipulações necessárias em vez de carregar todo o conjunto de uma vez. Nesse caso, a cada bloco o banco filtrava apenas as informações as quais o município de residência fosse "Campinas" e o estado de residência fosse "SP" e, depois disso, selecionar apenas as colunas que continham as variáveis de peso e altura de cada jovem. Desse modo, não é necessário baixar o banco de dados, mas sim, apenas colocar o [link](https://dadosabertos.eb.mil.br/arquivos/sermil/sermil2022.csv) de acesso a ele dentro do parâmetro *file* da função *read_csv_chunked* usada para fazer a leitura do banco no modo descrito.
+
+\   Assim, ao final da leitura de todos os blocos tínhamos o peso e a altura de todos os jovens que se apresentaram para o serviço militar obrigatório na cidade de Campinas. Nesse momento, não estamos considerando se o jovem que se apresentou foi dispensado ou não do serviço militar, iremos fazer os agrupamentos supondo que todos que se apresentaram irão fazer parte desse programa e que todos eles irão utilizar as quadras poliesportivas da instituição para a prática de esportes coletivos.
+
+
+```{r lendo_banco, eval=FALSE, include=FALSE}
+# Extraindo o banco diretamente da internet
+link <- "https://dadosabertos.eb.mil.br/arquivos/sermil/sermil2022.csv"
+
+# Escolhendo as colunas a se utilizar
+my_cols <- cols_only(PESO = "d", ALTURA = "d", 
+                     MUN_RESIDENCIA = "c", UF_RESIDENCIA = "c",
+                     DISPENSA = "c")
+
+getStats <- function(input, pos) {
+  input %>%
+    filter(MUN_RESIDENCIA == "CAMPINAS" & UF_RESIDENCIA == "SP") %>%
+    select(PESO, ALTURA)
+  
+}
+
+# Processo demorado (volume de dados muito grande)
+# Demora aproximadamente 2 minutos para puxar os dados
+sermil2022cps <- read_csv_chunked(link, chunk_size = 1e6,
+                                 callback = DataFrameCallback$new(getStats),
+                                 col_types = my_cols,
+                                 progress = show_progress())
+
+# escrever o banco de dados para ficar mais acessível durante o 
+# desenvolvimento do projeto
+#write.csv(sermil2022cps, "sermil2022cps.csv")
+```
+
+```{r lendo_banco_manipulado, message=FALSE}
+sermil2022cps <- read_csv("sermil2022cps.csv", col_select = c(PESO, ALTURA))
+```
+
+\   Após esse procedimento, temos `r nrow(sermil2022cps)`  observações com `r sum(is.na(sermil2022cps))` células vazias. Com isso, para executar a clusterização vamos eliminar as linhas que contém essas informações faltantes, sobrando $2264$ observações, e, para esse trabalho de agrupamento, vamos retirar uma amostra de tamanho $100$ de forma pseudoaleatória (usando a função *slice_sample* do *dplyr*).
+
+```{r amostrando, warning=F}
+sermil2022cps %<>% drop_na() # tirando as linhas com celulas vazias
+
+set.seed(123456) # semente aleatoria
+s1.sermil2022cps <- sermil2022cps %>% slice_sample(n = 100)
+```
+
+```{r observando_comportamento, fig.height = 3, fig.width = 5, fig.cap="Diagrama de dispersão das variáveis"}
+s1.sermil2022cps %>%
+  ggplot() +
+  geom_point(aes(x = PESO, y = ALTURA)) +
+  theme_classic() 
+```
+
+# Materiais e Metodos
+
+\   Para o agrupamento dessa amostra de $n = 100$ extraída vamos utilizar o agrupamento hierárquico com o método de ligação completa (*complete linkage*) e a quantidade de grupos criados será definido pelo método de Elbow. Esse modo supõe que nossa amostra ainda não possui nenhuma divisão, ou seja, ainda esses dados não foram rotulados.
+
+\   O *complete linkage* é um método aglomerativo de agrupamento hierárquico, isto é, no passo $h = 0$ temos $n$ grupos e a cada passo, encontramos o melhor par de grupos e fazemos a fusão destes até o último passo em que todas as $n$ observações formam um único grupo. Desse modo, o que difere a ligação completa das outras é a maneira de escolher o melhor par de grupos.
+
+\   A escolha do melhor par de grupos realizada pelo *complete linkage* considera os pontos mais distantes entre dois grupos de pontos e une os grupos o qual essa distancia é menor. Por exemplo, dados os grupos A, B e C, temos $d_{AB}$ como a distância dos pontos mais distantes de A e B, $d_{AC}$ como a distância dos pontos mais distantes de A e C e $d_{BC}$ como a distância dos pontos mais distantes de B e C. Se a menor distância dentro dessas consideradas for a $d_{AB}$ então, neste passo, vamos unir o grupo A ao grupo B formando um grupo só e o grupo C se mantém como era no passo anterior.
+
+\   Lembrando que a distância aqui considerada para essas ligações e a distância euclidiana que, sendo o ponto 1 com as coordenadas $(x_1, y_1)$ e o ponto 2 com as coordenadas $(x_2, y_2)$, é dada por:
+
+\[d(Euc) = \sqrt{(x_1 - x_2)^2 + (y_1 - y_2)^2}\]
+
+\   A ligação completa, então, nos gera uma árvore hierárquica do passo 0 até o último em que todos os grupos inciais estão unidos. Para definir em qual passo vamos parar de fazer essas ligações foi utilizado o método de Elbow. Esse método para cada passo K, computa a variância total considerando o número de grupos existente. O gráfico dessa variância total a cada passo tende, em algum momento, apresentar um ponto de inflexão, e é nesse ponto que temos o número de grupos ideal para os dados e para o método escolhido.
+
+\   Além disso, com esse método de Elbow podemos obter o número de grupos ideal para nossos dados antes mesmo de ver o dendograma (representação gráfica da hierarquia formada pelo agrupamento por ligação completa)
+
+# Resultados
+
+\   Começando pelo método de Elbow, a partir do gráfico de pontos (Figura 2) que mostra a variância considerando o número de grupos existentes, é possível observar uma leve inflexão quando temos K = 5 grupos, como indicado pela linha vermelha. Essa leve inflexão foi considerada suficiente para a determinação do número de clusteres que iremos trabalhar.
+
+\   Com o número de grupos ideal já obtido, conseguimos o h, medida do corte feito no dendograma da hierarquia gerada pelo método *complete linkage* em cima desses dados, que está indicado pela linha vermelha no gráfico do Dendograma do cluster da Figura 3.
+
+```{r metodo_elbow, fig.height = 3, fig.width = 5, fig.cap="Método de Elbow", fig.height=3.5, fig.width = 7.5,}
+# clusterizando pelo metodo complete linkage
+cluster <- hclust(dist(s1.sermil2022cps), method = "complete")
+
+h <- seq(0, 30, by = 1) # definindo o espa
+N <- nrow(s1.sermil2022cps)
+
+
+totalVar <- numeric(length(h))
+K <- numeric(length(h))
+Y <- with(s1.sermil2022cps, cbind(ALTURA, PESO))
+
+for(i in seq_along(h)){
+  groups <- factor(cutree(cluster, h = h[i]))
+  K[i] <- length(levels(groups))
+  s.manova <- summary(manova(Y ~ groups), tol = 0)
+  
+  B <- s.manova$SS$groups
+  W <- s.manova$SS$Residuals
+  
+  totalVar[i] <- det(B)/(det(B+W))
+}
+
+data.frame(totalVar, K) %>%
+  ggplot() +
+  geom_point(aes(x = K, y = totalVar)) +
+  geom_vline(xintercept = 5, col = "red") +
+  theme_classic() +
+  labs(title = "Metodo de Elbow",
+       y = "Variancia Total")
+```
+
+```{r clusterizando_AP, fig.cap="Dendograma do cluster (agrupamento feito por complete linkage)", fig.height=3.5}
+ggdendrogram(cluster) +
+  geom_hline(yintercept = h[which.max(K==5)], col = "red") +
+  labs(title = "Dendograma do Cluster")
+```
+
+
+\   A partir dessas considerações, temos cada cluster bem definido, como é mostrado no Diagrama de pontos que coloca os pontos em seus respsctivos grupos da Figura 4.
+
+
+```{r vendo_cluster_LL, fig.cap="Diagrama de pontos apresentando os grupos obtidos por complete linkage", fig.height=4.3, fig.width=7}
+groups <- cutree(cluster, h = h[which.max(K==5)])
+
+plot(s1.sermil2022cps, col = groups)
+for(i in unique(groups)){
+  LLL <- s1.sermil2022cps[groups == i,]
+  xts <- chull(LLL)
+  xts <- c(xts,xts[1])
+  lines(LLL[xts,], col = i)
+}
+```
+
+# Discussão
+
+\   Portanto, através do agrupamento hierárquico utilizando o método de ligação completa, conseguimos dividir os jovens que ingressaram no programa de serviço militar obrigatório em Campinas, fazer com que nas práticas de esportes coletivos nas quadras poliesportivas da EsPCex sejam mais seguras, diminuindo a disparidade de porte físico entre as equipes e evitando assim, possíveis lesões vindas do atrito entre pessoas com portes físicos muito diferentes.
+
+\   Sabendo que estamos considerando o peso a altura dos jovens, uma outra alternativa para realizar essa separação é dividí-los pelo IMC (Índice de massa corporal). Entretanto, a clusterização é preferível porque ela considera os dados observados, diferente da separação feita pelo IMC onde a faixa do índice já é rotulado antes mesmo de saber sobre as observações. Caso a proporção de pessoas abaixo do peso (seguindo a tabela de IMC) seja grande, a separação por esse índice coloca todas essas pessoas no mesmo grupo, enquanto utilizando a metodologia apresentada isso não aconteceria.
+
+\newpage
+# Referências
+
+1. Ludwig, Guilherme. Slides apresentados em aula na Universidade Estadual de Campinas em 2024.
+
+2. B. S. Everitt, S. Landau, M. Leese e D. Stahl. Cluster Analysis, 5th edition. John Wiley & Sons, 2011.
+
+3. Bouveyron C, Celeux G, Murphy TB, Raftery AE. Model-Based Clustering and Classification for Data Science: With Applications in R. Cambridge University Press; 2019.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
