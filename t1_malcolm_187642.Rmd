@@ -1,10 +1,12 @@
 ---
-title: "Agrupando Jovens para a Prática Segura de Esportes Coletivos na Escola Preparatória de Cadetes do Exército (EsPCex)"
+title: Agrupando Jovens para a Prática Segura de Esportes Coletivos na Escola Preparatória
+  de Cadetes do Exército (EsPCex)
 author: "Trabalho 1 - ME921"
 date: "Malcolm dos Reis - 187642"
-output: pdf_document
-header-includes:
- \usepackage{float}
+output:
+  html_document:
+    df_print: paged
+header-includes: \usepackage{float}
 ---
 
 ```{r setup, include=FALSE}
@@ -41,6 +43,8 @@ library(ggdendro) # dendograma com ggplot
 \   O método adotado para ler esse banco de forma mais otimizada foi ler o arquivo (.csv) em *chunks*, que envolve dividir a leitura dos dados em partes menores e já fazer as manipulações necessárias em vez de carregar todo o conjunto de uma vez. Nesse caso, a cada bloco o banco filtrava apenas as informações as quais o município de residência fosse "Campinas" e o estado de residência fosse "SP" e, depois disso, selecionar apenas as colunas que continham as variáveis de peso e altura de cada jovem. Desse modo, não é necessário baixar o banco de dados, mas sim, apenas colocar o [link](https://dadosabertos.eb.mil.br/arquivos/sermil/sermil2022.csv) de acesso a ele dentro do parâmetro *file* da função *read_csv_chunked* usada para fazer a leitura do banco no modo descrito.
 
 \   Assim, ao final da leitura de todos os blocos tínhamos o peso e a altura de todos os jovens que se apresentaram para o serviço militar obrigatório na cidade de Campinas. Nesse momento, não estamos considerando se o jovem que se apresentou foi dispensado ou não do serviço militar, iremos fazer os agrupamentos supondo que todos que se apresentaram irão fazer parte desse programa e que todos eles irão utilizar as quadras poliesportivas da instituição para a prática de esportes coletivos.
+
+\   Todo o processo de tratamento dos dados e de clusterização foi feito utilizando a linguagem R de programação e os códigos produzidos estão disponíveis [nesse projeto do GitHub](https://github.com/malcolmreis02)
 
 
 ```{r lendo_banco, eval=FALSE, include=FALSE}
@@ -181,6 +185,7 @@ for(i in unique(groups)){
 2. B. S. Everitt, S. Landau, M. Leese e D. Stahl. Cluster Analysis, 5th edition. John Wiley & Sons, 2011.
 
 3. Bouveyron C, Celeux G, Murphy TB, Raftery AE. Model-Based Clustering and Classification for Data Science: With Applications in R. Cambridge University Press; 2019.
+
 
 
 
