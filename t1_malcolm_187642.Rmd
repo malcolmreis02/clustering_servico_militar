@@ -1,11 +1,10 @@
 ---
 title: Agrupando Jovens para a Prática Segura de Esportes Coletivos na Escola Preparatória
   de Cadetes do Exército (EsPCex)
-author: "Trabalho 1 - ME921"
-date: "Malcolm dos Reis - 187642"
+author: "Trabalho 1 (ME921) - Malcolm dos Reis - 187642"
+date: ""
 output:
-  html_document:
-    df_print: paged
+  pdf_document: default
 header-includes: \usepackage{float}
 ---
 
@@ -44,7 +43,7 @@ library(ggdendro) # dendograma com ggplot
 
 \   Assim, ao final da leitura de todos os blocos tínhamos o peso e a altura de todos os jovens que se apresentaram para o serviço militar obrigatório na cidade de Campinas. Nesse momento, não estamos considerando se o jovem que se apresentou foi dispensado ou não do serviço militar, iremos fazer os agrupamentos supondo que todos que se apresentaram irão fazer parte desse programa e que todos eles irão utilizar as quadras poliesportivas da instituição para a prática de esportes coletivos.
 
-\   Todo o processo de tratamento dos dados e de clusterização foi feito utilizando a linguagem R de programação e os códigos produzidos estão disponíveis [nesse projeto do GitHub](https://github.com/malcolmreis02)
+\   Todo o processo de tratamento dos dados e de clusterização foi feito utilizando a linguagem R de programação e os códigos produzidos estão disponíveis [nesse projeto do GitHub](https://github.com/malcolmreis02/clustering_servico_militar)
 
 
 ```{r lendo_banco, eval=FALSE, include=FALSE}
@@ -177,7 +176,6 @@ for(i in unique(groups)){
 
 \   Sabendo que estamos considerando o peso a altura dos jovens, uma outra alternativa para realizar essa separação é dividí-los pelo IMC (Índice de massa corporal). Entretanto, a clusterização é preferível porque ela considera os dados observados, diferente da separação feita pelo IMC onde a faixa do índice já é rotulado antes mesmo de saber sobre as observações. Caso a proporção de pessoas abaixo do peso (seguindo a tabela de IMC) seja grande, a separação por esse índice coloca todas essas pessoas no mesmo grupo, enquanto utilizando a metodologia apresentada isso não aconteceria.
 
-\newpage
 # Referências
 
 1. Ludwig, Guilherme. Slides apresentados em aula na Universidade Estadual de Campinas em 2024.
